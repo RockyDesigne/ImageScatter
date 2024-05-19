@@ -50,15 +50,15 @@ void testPlug(Particle* p, float friction, float ease, Raylib::Vector2 mousePos)
     auto dx = mousePos.x - p->x;
     auto dy = mousePos.y - p->y;
     auto distance = dx * dx + dy * dy;
-    auto force = -MOUSE_RADIUS / distance;
+    auto force = -3000 / distance;
 
     if (distance < MOUSE_RADIUS) {
         auto angle = std::atan2(dy,dx);
-        p->vx -= force * std::cos(angle);
-        p->vy -= force * std::sin(angle);
+        p->vx += force * std::cos(angle);
+        p->vy += force * std::sin(angle);
     }
-    p->vx *= 0.8;
-    p->vy *= 0.8;
+    p->vx *= 0.9;
+    p->vy *= 0.9;
     p->x += p->vx + (p->oX - p->x) * 0.1;
     p->y += p->vy + (p->oY - p->y) * 0.1;
 }
