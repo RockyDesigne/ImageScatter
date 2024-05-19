@@ -1,9 +1,133 @@
 #include <iostream>
+namespace Raylib {
+
 #include <raylib.h>
+
+}
+#include <windows.h>
 #include <random>
 #include <cassert>
 
-constexpr int winHeight = 800, winWidth = 800, GAP = 1, MOUSE_RADIUS = 3000;
+#include "Particle.h"
+#include "Constants.h"
+
+#undef LoadImage
+
+/*
+// Forward declaration of the LoadLibraryA function
+extern "C" __declspec(dllimport) void* __stdcall LoadLibraryA(const char* lpLibFileName);
+
+// Typedef for the LoadLibraryA function pointer
+typedef void*(__stdcall *LoadLibraryA_t)(const char* lpLibFileName);
+
+// Forward declaration of the GetLastError function
+extern "C" __declspec(dllimport) unsigned long __stdcall GetLastError();
+
+// Typedef for the GetLastError function pointer
+typedef unsigned long (__stdcall *GetLastError_t)();
+
+// Forward declaration of the CopyFile function
+extern "C" __declspec(dllimport) int __stdcall CopyFile(const char* lpExistingFileName, const char* lpNewFileName, int bFailIfExists);
+
+// Typedef for the CopyFile function pointer
+typedef int (__stdcall *CopyFile_t)(const char* lpExistingFileName, const char* lpNewFileName, int bFailIfExists);
+
+// Forward declaration of the GetProcAddress function
+extern "C" __declspec(dllimport) void* __stdcall GetProcAddress(void* hModule, const char* lpProcName);
+
+// Typedef for the GetProcAddress function pointer
+typedef void*(__stdcall *GetProcAddress_t)(void* hModule, const char* lpProcName);
+
+// Forward declaration of the FreeLibrary function
+extern "C" __declspec(dllimport) int __stdcall FreeLibrary(void* hModule);
+
+// Typedef for the FreeLibrary function pointer
+typedef int (__stdcall *FreeLibrary_t)(void* hModule);
+*/
+
+struct Plugin {
+
+    //typedef void (*operation_func)(Particle *p, float friction, float ease, Raylib::Vector2 mousePos);
+
+    using plugFunc = void (*)(Particle *p, float friction, float ease, Raylib::Vector2 mousePos);
+
+    HMODULE m_handle = nullptr;
+    plugFunc m_op = nullptr;
+
+    const char* m_dllOgPath = nullptr;
+    const char* m_dllToLoad = nullptr;
+    const char* m_plugFuncName = nullptr;
+
+    Plugin(const char* dllOgPath,const char* dllToLoad,const char* plugFuncName);
+
+    void load_library();
+
+
+    void copy_file();
+
+    void unload_library();
+
+    void loadAndAssignPlugin(plugFunc* f);
+
+    ~Plugin();
+
+};
+
+
+Plugin::Plugin(const char *dllOgPath, const char *dllToLoad, const char *plugFuncName)
+        :   m_dllOgPath{dllOgPath},
+            m_dllToLoad{dllToLoad},
+            m_plugFuncName{plugFuncName} {}
+
+void Plugin::load_library() {
+    m_handle = LoadLibrary(m_dllToLoad);
+    if (!m_handle) {
+        std::cerr << "Could not load library: " << GetLastError() << std::endl;
+        return;
+    }
+
+    m_op= (plugFunc)GetProcAddress(m_handle, m_plugFuncName);
+    if (!m_op) {
+        std::cerr << "Could not load function: " << GetLastError() << std::endl;
+        FreeLibrary(m_handle);
+        m_handle = nullptr;
+    }
+}
+
+void Plugin::copy_file() {
+    bool copyResult = CopyFile(m_dllOgPath, m_dllToLoad, false);
+    if (!copyResult) {
+        DWORD error = GetLastError();
+        std::cerr << "Failed to copy file. Error code: " << error << std::endl;
+    }
+}
+
+void Plugin::unload_library() {
+    if (m_handle) {
+        FreeLibrary(m_handle);
+    }
+}
+
+void Plugin::loadAndAssignPlugin(plugFunc* f) {
+    unload_library();
+
+    copy_file();
+
+    m_handle = nullptr;
+    m_op= nullptr;
+
+    load_library();
+
+    if (!m_op|| !m_handle) {
+        throw std::runtime_error("Failed to load plug!");
+    }
+    *f = m_op;
+}
+
+Plugin::~Plugin() {
+    unload_library();
+}
+
 
 float getRand() {
     static std::random_device rd {};
@@ -14,153 +138,119 @@ float getRand() {
     return dist(mt);
 }
 
-struct Particle {
-    float oX;
-    float oY;
-    float x;
-    float y;
-    float vx;
-    float vy;
-    static float ease;
-    static int size;
-    static float friction;
-    Color color;
-
-    void draw() {
-        DrawRectangle(x,y,size,size, color);
-    }
-
-    void update() {
-
-        auto mousePos = GetMousePosition();
-        auto dx = mousePos.x - x;
-        auto dy = mousePos.y - y;
-        auto distance = dx * dx + dy * dy;
-        auto force = -MOUSE_RADIUS / distance;
-
-        if (distance < MOUSE_RADIUS) {
-            auto angle = std::atan2(dy,dx);
-            vx += force * std::cos(angle);
-            vy += force * std::sin(angle);
-        }
-        vx *= friction;
-        vy *= friction;
-        x += vx + (oX - x) * ease;
-        y += vy + (oY - y) * ease;
-    }
-
-    void warp() {
-
-        auto angle = std::atan2(y,x);
-        vx += std::cos(angle);
-        vx += std::sin(angle);
-
-        //x = GetMousePosition().x + getRand() * 100;
-        //y = GetMousePosition().y + getRand() * 100;
-    }
-
-};
-
-int Particle::size = 10;
-float Particle::ease = 0.1f;
-float Particle::friction = 0.95f;
 constexpr int particleMaxSize = winHeight * winWidth;
 static Particle particles[particleMaxSize];
 int particleSize = 0;
-constexpr Color backgroundColor = {255,255,255,0};
+constexpr Raylib::Color backgroundColor = {255,255,255,0};
 
-void pushParticle(const Color& color, int oX, int oY) {
+void pushParticle(const Raylib::Color& color, int oX, int oY, float x, float y, float vx, float vy) {
     assert(particleSize < particleMaxSize && "Particles buffer overflow!");
     particles[particleSize].color = color;
     particles[particleSize].oX = oX;
     particles[particleSize].oY = oY;
-    particles[particleSize].x = (getRand() * winWidth);
-    particles[particleSize].y = (getRand() * winHeight);
-    particles[particleSize].vx = (getRand() * 2 - 1);
-    particles[particleSize].vy = (getRand() * 2 - 1);
+    particles[particleSize].x = x;
+    particles[particleSize].y = y;
+    particles[particleSize].vx = vx;
+    particles[particleSize].vy = vy;
     ++particleSize;
 }
 
-void loadParticles(Color* pixels, int imgWidth, int imgHeight) {
+void loadParticles(Raylib::Color* pixels, int imgWidth, int imgHeight) {
     for (int y = 0; y < imgHeight; y += GAP) {
         for (int x = 0; x < imgWidth; x += GAP) {
-            Color pixel = pixels[y*imgWidth+x];
+            Raylib::Color pixel = pixels[y*imgWidth+x];
             if (pixel.a > 0) {
-                pushParticle(pixel, x, y);
+                pushParticle(pixel,
+                             x,
+                             y,
+                             std::clamp<float>(getRand() * winWidth,0,winWidth - Particle::size),
+                             std::clamp<float>(getRand() * winHeight,0,winHeight - Particle::size),
+                             getRand() * 2 - 1,
+                             getRand() * 2 -1);
             }
         }
     }
 }
 
+void resetState() {
+    for (int i = 0; i < particleSize; ++i) {
+        particles[i].x = std::clamp<float>(getRand() * winWidth,0,winWidth - Particle::size);
+        particles[i].y = std::clamp<float>(getRand() * winHeight,0,winHeight - Particle::size);
+        particles[i].touched = false;
+    }
+}
+
 int main() {
 
+    const char* filePath = "../images/lena.png";
+    const char* dllOgPath = R"(G:\projects\repos\imageBanana\cmake-build-debug\lib\libplugs.dll)";
+    const char* dllToLoad = "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll";
 
-    InitWindow(winWidth, winHeight, "imageBanana");
+    Raylib::InitWindow(winWidth, winHeight, "imageBanana");
 
-    //auto lenaTexture = LoadTexture("../images/lena.png");
+    Raylib::SetWindowState(Raylib::FLAG_VSYNC_HINT | Raylib::FLAG_WINDOW_RESIZABLE);
 
-    auto lenaShader = LoadShader("../shaders/vs.glsl", "../shaders/fs.glsl");
+    auto shader = Raylib::LoadShader("../shaders/vs.glsl", "../shaders/fs.glsl");
 
-    Image lenaImage = LoadImage("../images/lena.png");
-    Image currImg = GenImageColor(winWidth, winHeight, backgroundColor);
+    Raylib::Image image = Raylib::LoadImage(filePath);
+    Raylib::Image currImg = Raylib::GenImageColor(winWidth, winHeight, backgroundColor);
 
-    //ImageDrawRectangle(&currImg,0,0,winWidth,winHeight, backgroundColor);
+    Raylib::ImageCrop(&image, Raylib::Rectangle {0,0,
+                                 std::clamp<float>((float)image.width, 0, winWidth),
+                                 std::clamp<float>((float)image.height,0,winHeight)});
 
-    ImageDraw(&currImg, lenaImage,
-              Rectangle {0,0, (float)currImg.width, (float)currImg.height},
-              Rectangle {(float)(winWidth/2-lenaImage.width/2),(float)(winHeight/2-lenaImage.height/2), (float)lenaImage.width,(float)lenaImage.height}, WHITE);
+    Raylib::ImageDraw(&currImg, image,
+                      Raylib::Rectangle {0,0, (float)currImg.width, (float)currImg.height},
+                      Raylib::Rectangle {(float)(winWidth/2 - image.width / 2), (float)(winHeight / 2 - image.height / 2), (float)image.width, (float)image.height}, Raylib::WHITE);
 
-    UnloadImage(lenaImage);
+    Raylib::UnloadImage(image);
 
-    Color* pixels = LoadImageColors(currImg);
+    Raylib::Color* pixels = Raylib::LoadImageColors(currImg);
 
     loadParticles(pixels, currImg.width, currImg.height);
 
-    UnloadImageColors(pixels);
+    Raylib::UnloadImageColors(pixels);
 
-    auto texture = LoadTextureFromImage(currImg);
+    auto texture = Raylib::LoadTextureFromImage(currImg);
 
-    ClearBackground(backgroundColor);
+    Raylib::ClearBackground(backgroundColor);
 
-    SetTargetFPS(60);
+    Raylib::SetTargetFPS(60);
 
-    while (!WindowShouldClose()) {
-        BeginDrawing();
+    Plugin plugin {dllOgPath, dllToLoad, "plug"};
 
-            ClearBackground(backgroundColor);
+    plugin.loadAndAssignPlugin(&Particle::plug);
 
-            //DrawTexture(texture, 0, 0, WHITE);
+    while (!Raylib::WindowShouldClose()) {
+        Raylib::BeginDrawing();
 
-            for (int i = 0; i < particleSize; ++i) {
-                particles[i].draw();
+        Raylib::ClearBackground(backgroundColor);
+
+            if (IsKeyPressed(Raylib::KEY_F5)) {
+                resetState();
+                plugin.loadAndAssignPlugin(&Particle::plug);
+            }
+
+            if (IsKeyPressed(Raylib::KEY_F11)) {
+                Raylib::ToggleFullscreen();
             }
 
             for (int i = 0; i < particleSize; ++i) {
                 particles[i].update();
             }
 
-            /*
             for (int i = 0; i < particleSize; ++i) {
-                /*
-                if (CheckCollisionPointCircle(Vector2(particles[i].x,particles[i].y),
-                                              GetMousePosition(),
-                                              16))
-                {
-                    particles[i].warp();
-                }
+                particles[i].draw();
             }
-            */
-        EndDrawing();
 
-        //UnloadImage(currImg);
-        //UnloadImageColors(pixels);
+        Raylib::EndDrawing();
     }
 
-    UnloadShader(lenaShader);
-    UnloadImage(currImg);
-    UnloadTexture(texture);
+    Raylib::UnloadShader(shader);
+    Raylib::UnloadImage(currImg);
+    Raylib::UnloadTexture(texture);
 
-    CloseWindow();
+    Raylib::CloseWindow();
 
     return 0;
 }
