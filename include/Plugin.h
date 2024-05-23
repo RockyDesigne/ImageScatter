@@ -5,6 +5,10 @@
 #ifndef IMAGEBANANA_PLUGIN_H
 #define IMAGEBANANA_PLUGIN_H
 
+#include "Particle.h"
+
+#include <string>
+
 #define WIN_32_LEAN_AND_MEAN
 #include <windows.h>
 
@@ -13,8 +17,6 @@ namespace Raylib {
 #include <raylib.h>
 
 }
-
-#include "Particle.h"
 
 using namespace Raylib;
 
@@ -27,9 +29,9 @@ struct Plugin {
     HMODULE m_handle = nullptr;
     plugFunc m_op = nullptr;
 
-    const char* m_dllOgPath = nullptr;
-    const char* m_dllToLoad = nullptr;
-    const char* m_plugFuncName = nullptr;
+    std::string m_dllOgPath{};
+    std::string m_dllToLoad {};
+    std::string m_plugFuncName {};
 
     Plugin(const char* dllOgPath,const char* dllToLoad,const char* plugFuncName);
 

@@ -11,13 +11,13 @@ Plugin::Plugin(const char *dllOgPath, const char *dllToLoad, const char *plugFun
             m_plugFuncName{plugFuncName} {}
 
 void Plugin::load_library() {
-    m_handle = LoadLibraryA(m_dllToLoad);
+    m_handle = LoadLibraryA(m_dllToLoad.c_str());
     if (!m_handle) {
         std::cerr << "Could not load library: " << GetLastError() << std::endl;
         return;
     }
 
-    m_op= (plugFunc)GetProcAddress(m_handle, m_plugFuncName);
+    m_op= (plugFunc)GetProcAddress(m_handle, m_plugFuncName.c_str());
     if (!m_op) {
         std::cerr << "Could not load function: " << GetLastError() << std::endl;
         FreeLibrary(m_handle);
@@ -26,7 +26,7 @@ void Plugin::load_library() {
 }
 
 void Plugin::copy_file() {
-    bool copyResult = CopyFileA(m_dllOgPath, m_dllToLoad, false);
+    bool copyResult = CopyFileA(m_dllOgPath.c_str(), m_dllToLoad.c_str(), false);
     if (!copyResult) {
         DWORD error = GetLastError();
         std::cerr << "Failed to copy file. Error code: " << error << std::endl;

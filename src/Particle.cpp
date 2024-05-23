@@ -3,7 +3,6 @@
 //
 
 #include "Particle.h"
-#include "Constants.h"
 #include <cmath>
 #include <cassert>
 
