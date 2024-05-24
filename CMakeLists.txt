@@ -5,17 +5,24 @@ set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(lib)
 
-set(SOURCES ./src/main.cpp src/Particle.cpp src/Plugin.cpp src/AnimationEngine.cpp)
+set(SOURCES src/main.cpp
+        src/Particle.cpp
+        src/Plugin.cpp
+        src/AnimationEngine.cpp
+        src/WindowsObject.cpp)
 
 include_directories(include)
 
-set(HEADERS ./include/Constants.h
-        ./include/Particle.h
-        ./include/Plugin.h
-        ./include/MyRandom.h
-        ./include/MyVector.h
-        ./include/ParticleVector.h
-        ./include/AnimationEngine.h)
+set(HEADERS include/Constants.h
+        include/Particle.h
+        include/Plugin.h
+        include/MyRandom.h
+        include/MyVector.h
+        include/ParticleVector.h
+        include/AnimationEngine.h
+        include/WindowsObject.h
+        include/OsObject.h
+        include/PluginInterface.h)
 
 add_executable(imageBanana ${SOURCES} ${HEADERS})
 

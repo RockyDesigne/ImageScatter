@@ -8,7 +8,8 @@
 #include "Particle.h"
 #include "ParticleVector.h"
 #include "Constants.h"
-#include "Plugin.h"
+#include "PluginInterface.h"
+#include "OsObject.h"
 
 #include <algorithm>
 
@@ -20,23 +21,25 @@ using namespace Raylib;
 
 #undef LoadImage
 
-class AnimationEngine {
+class AnimationEngine final {
 public:
     static AnimationEngine* getInstance();
-
-    static Plugin* plug;
 
     int currWinHeight = winHeight;
     int currWinWidth = winWidth;
     static constexpr int maxParticles = winHeight * winHeight;
     static constexpr Raylib::Color backgroundColor = {255,255,255,0};
 
+    OsObject* getOsObject();
+    PluginInterface* getPlug();
+
     void reset();
     void updateParticles();
     void drawParticles();
     void loadParticles(Raylib::Color* pixels, int imgWidth, int imgHeight);
     void loadImage(const char* filePath);
-    void loadPlug(const char* dllOgPath, const char* dllToLoad, const char* plugName);
+    void loadPlug(PluginInterface* plug);
+    void loadOsObject(OsObject* osObj);
 
 
     AnimationEngine(const AnimationEngine&) = delete;
@@ -44,15 +47,12 @@ public:
 
 private:
 
-    const char* m_dllOgPath = R"(G:\projects\repos\imageBanana\cmake-build-debug\lib\libplugs.dll)";
-    const char* m_dllToLoad = "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll";
-
-    char* m_currFile = nullptr;
-
     AnimationEngine() = default;
     ~AnimationEngine();
 
-    static AnimationEngine* instance;
+    static AnimationEngine* m_instance;
+    PluginInterface* m_plug = nullptr;
+    OsObject* m_osObject = nullptr;
 
     ParticleVector<maxParticles> particles;
 };

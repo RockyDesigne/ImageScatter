@@ -3,39 +3,14 @@ namespace Raylib {
 #include <raylib.h>
 
 }
+
 using namespace Raylib;
 
 #include "Particle.h"
 #include "Constants.h"
 #include "AnimationEngine.h"
-
-#include <windows.h>
-#undef LoadImage
-
-std::string getFileLocation() {
-    OPENFILENAME ofn;
-    char szFile[260];
-
-    ZeroMemory(&ofn, sizeof ofn);
-    ofn.lStructSize = sizeof ofn;
-    ofn.hwndOwner = GetForegroundWindow();
-
-    ofn.lpstrFile = szFile;
-    ofn.lpstrFile[0] = '\0';
-    ofn.nMaxFile = sizeof szFile;
-    ofn.lpstrFilter = "All\0*.*\0Text\0*.TXT\0";
-    ofn.nFilterIndex = 1;
-    ofn.lpstrFileTitle = nullptr;
-    ofn.nMaxFileTitle = 0;
-    ofn.lpstrInitialDir = R"(G:\projects\repos\imageBanana\images)";
-    ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
-    // Display the Open File dialog box
-    if (GetOpenFileName(&ofn) == TRUE) {
-        return ofn.lpstrFile;
-    } else {
-        return {};
-    }
-}
+#include "Plugin.h"
+#include "WindowsObject.h"
 
 int main() {
 
@@ -53,11 +28,24 @@ int main() {
 
     Raylib::SetTargetFPS(60);
 
-    animEngine->loadPlug(R"(G:\projects\repos\imageBanana\cmake-build-debug\lib\libplugs.dll)",
-                           "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll",
-                           "plug");
 
-    AnimationEngine::plug->loadAndAssignPlugin(&Particle::plug);
+    {
+        auto pl = new Plugin {R"(G:\projects\repos\imageBanana\cmake-build-debug\lib\libplugs.dll)",
+                              "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll",
+                              "plug"};
+        animEngine->loadPlug(pl);
+    }
+
+    auto plug = animEngine->getPlug();
+
+    {
+        auto osObj = new WindowsObject {};
+        animEngine->loadOsObject(osObj);
+    }
+
+    auto osObj = animEngine->getOsObject();
+
+    plug->loadAndAssignPlugin(&Particle::plug);
 
     while (!Raylib::WindowShouldClose()) {
         Raylib::BeginDrawing();
@@ -66,11 +54,11 @@ int main() {
 
             if (IsKeyPressed(Raylib::KEY_F5)) {
                 animEngine->reset();
-                AnimationEngine::plug->loadAndAssignPlugin(&Particle::plug);
+                plug->loadAndAssignPlugin(&Particle::plug);
             }
 
             if (IsKeyPressed(Raylib::KEY_F4)) {
-                std::string location = getFileLocation();
+                std::string location = osObj->getFileLocation();
                 if (location.empty()) {
                     throw std::runtime_error("File not found!");
                 }

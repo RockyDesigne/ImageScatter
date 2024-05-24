@@ -4,33 +4,45 @@
 #include "AnimationEngine.h"
 #include "MyRandom.h"
 
+AnimationEngine* AnimationEngine::m_instance = nullptr;
 
-Plugin* AnimationEngine::plug = nullptr;
-AnimationEngine* AnimationEngine::instance = nullptr;
+OsObject* AnimationEngine::getOsObject() {
+    if (!m_osObject) {
+        throw std::runtime_error ("No os object instantiated!");
+    }
+    return m_osObject;
+}
+
+PluginInterface* AnimationEngine::getPlug() {
+    if (!m_plug) {
+        throw std::runtime_error ("No plugin object instantiated!");
+    }
+    return m_plug;
+}
 
 AnimationEngine* AnimationEngine::getInstance() {
-    if (!instance) {
-        instance = new AnimationEngine;
+    if (!m_instance) {
+        m_instance = new AnimationEngine;
     }
-    return instance;
+    return m_instance;
 }
 
 void AnimationEngine::reset() {
-    for (int i = 0; i < particles.m_size; ++i) {
-        particles.elems[i].x = std::clamp<float>(getRand() * winWidth, 0, winWidth - Particle::size);
-        particles.elems[i].y = std::clamp<float>(getRand() * winHeight, 0, winHeight - Particle::size);
+    for (std::size_t i = 0; i < particles.m_size; ++i) {
+        particles.elems[i].x = std::clamp<float>(getRand() * winWidth, 0, static_cast<float>(winWidth) - static_cast<float>(Particle::size));
+        particles.elems[i].y = std::clamp<float>(getRand() * winHeight, 0, static_cast<float>(winHeight) - static_cast<float>(Particle::size));
         particles.elems[i].touched = false;
     }
 }
 
 void AnimationEngine::updateParticles() {
-    for (int i = 0; i < particles.m_size; ++i) {
+    for (std::size_t i = 0; i < particles.m_size; ++i) {
         particles.elems[i].update();
     }
 }
 
 void AnimationEngine::drawParticles() {
-    for (int i = 0; i < particles.m_size; ++i) {
+    for (std::size_t i = 0; i < particles.m_size; ++i) {
         particles.elems[i].draw();
     }
 }
@@ -47,8 +59,8 @@ void AnimationEngine::loadParticles(Raylib::Color* pixels, int imgWidth, int img
                 tmp.oX = static_cast<float>(x);
                 tmp.oY = static_cast<float>(y);
 
-                tmp.x = std::clamp<float>(getRand() * winWidth, 0, static_cast<float>(winWidth) - Particle::size);
-                tmp.y = std::clamp<float>(getRand() * winHeight, 0, static_cast<float>(winHeight) - Particle::size);
+                tmp.x = std::clamp<float>(getRand() * winWidth, 0, static_cast<float>(winWidth) - static_cast<float>(Particle::size));
+                tmp.y = std::clamp<float>(getRand() * winHeight, 0, static_cast<float>(winHeight) - static_cast<float>(Particle::size));
 
                 tmp.vx = getRand() * 2 - 1;
                 tmp.vy = getRand() * 2 - 1;
@@ -60,8 +72,8 @@ void AnimationEngine::loadParticles(Raylib::Color* pixels, int imgWidth, int img
 }
 
 AnimationEngine::~AnimationEngine() {
-    delete plug;
-    delete instance;
+    delete m_plug;
+    delete m_instance;
 }
 
 void AnimationEngine::loadImage(const char* filePath) {
@@ -71,12 +83,16 @@ void AnimationEngine::loadImage(const char* filePath) {
     Raylib::Image currImg = Raylib::GenImageColor(currWinWidth, currWinHeight, backgroundColor);
 
     Raylib::ImageCrop(&image, Raylib::Rectangle {0,0,
-                                                 std::clamp<float>((float)image.width, 0, currWinWidth),
-                                                 std::clamp<float>((float)image.height,0,currWinHeight)});
+                                                 std::clamp<float>((float)image.width, 0, static_cast<float>(currWinWidth)),
+                                                 std::clamp<float>((float)image.height,0,static_cast<float>(currWinHeight))});
 
     Raylib::ImageDraw(&currImg, image,
-                      Raylib::Rectangle {0,0, (float)currImg.width, (float)currImg.height},
-                      Raylib::Rectangle {(float)(currWinWidth/2 - image.width / 2), (float)(currWinHeight / 2 - image.height / 2), (float)image.width, (float)image.height}, Raylib::WHITE);
+                      Raylib::Rectangle {0,0, static_cast<float>(currImg.width), static_cast<float>(currImg.height)},
+                      Raylib::Rectangle {(static_cast<float>(currWinWidth)/2 - static_cast<float>(image.width) / 2),
+                                         (static_cast<float>(currWinHeight) / 2 - static_cast<float>(image.height) / 2),
+                                         static_cast<float>(image.width),
+                                         static_cast<float>(image.height)},
+                                         Raylib::WHITE);
 
     Raylib::UnloadImage(image);
 
@@ -88,7 +104,12 @@ void AnimationEngine::loadImage(const char* filePath) {
     Raylib::UnloadImage(currImg);
 }
 
-void AnimationEngine::loadPlug(const char *dllOgPath, const char *dllToLoad, const char *plugName) {
-    delete plug;
-    plug = new Plugin {dllOgPath, dllToLoad, plugName};
+void AnimationEngine::loadPlug(PluginInterface* plug) {
+    delete m_plug;
+    m_plug = plug;
+}
+
+void AnimationEngine::loadOsObject(OsObject *osObj) {
+    delete m_osObject;
+    m_osObject = osObj;
 }

@@ -2,8 +2,14 @@
 // Created by HORIA on 19.05.2024.
 //
 #include "Plugin.h"
+
 #include <stdexcept>
 #include <iostream>
+
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
 
 Plugin::Plugin(const char *dllOgPath, const char *dllToLoad, const char *plugFuncName)
         :   m_dllOgPath{dllOgPath},
@@ -17,10 +23,10 @@ void Plugin::load_library() {
         return;
     }
 
-    m_op= (plugFunc)GetProcAddress(m_handle, m_plugFuncName.c_str());
+    m_op = (plugFunc)GetProcAddress(reinterpret_cast<HMODULE>(m_handle), m_plugFuncName.c_str());
     if (!m_op) {
         std::cerr << "Could not load function: " << GetLastError() << std::endl;
-        FreeLibrary(m_handle);
+        FreeLibrary(reinterpret_cast<HMODULE>(m_handle));
         m_handle = nullptr;
     }
 }
@@ -35,26 +41,26 @@ void Plugin::copy_file() {
 
 void Plugin::unload_library() {
     if (m_handle) {
-        FreeLibrary(m_handle);
+        FreeLibrary(reinterpret_cast<HMODULE>(m_handle));
     }
 }
 
-void Plugin::loadAndAssignPlugin(plugFunc* f) {
+void Plugin::loadAndAssignPlugin(void* f) {
     unload_library();
 
     copy_file();
 
     m_handle = nullptr;
-    m_op= nullptr;
+    m_op = nullptr;
 
     load_library();
 
     if (!m_op|| !m_handle) {
-        throw std::runtime_error("Failed to load plug!");
+        throw std::runtime_error("Failed to load m_plug!");
     }
-    *f = m_op;
+    *reinterpret_cast<plugFunc*>(f) = m_op;
 }
 
 Plugin::~Plugin() {
-    unload_library();
+    FreeLibrary(reinterpret_cast<HMODULE>(m_handle));
 }

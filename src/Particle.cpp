@@ -17,7 +17,7 @@ void Particle::draw() {
 
 void Particle::update() {
 
-    assert(plug && "Failed to load plug!");
+    assert(plug && "Failed to load m_plug!");
 
     if (plug) {
         plug(this, friction, ease, Raylib::GetMousePosition());
