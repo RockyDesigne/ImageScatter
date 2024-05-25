@@ -4,7 +4,6 @@ project(imageBanana)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(lib)
-add_subdirectory(src/OsSpecific)
 
 set(SOURCES src/main.cpp
         src/engine/Particle.cpp
