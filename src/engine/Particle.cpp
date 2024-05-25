@@ -9,7 +9,8 @@
 int Particle::size = 10;
 float Particle::ease = 0.1f;
 float Particle::friction = 0.95f;
-void (*Particle::plug) (Particle* p, float friction, float ease, Raylib::Vector2 mousePos) = nullptr;
+bool Particle::isMousePressed = false;
+Particle::plugFunc Particle::plug = nullptr;
 
 void Particle::draw() {
     DrawRectangle(x,y,size,size, color);
@@ -19,18 +20,15 @@ void Particle::update() {
 
     assert(plug && "Failed to load m_plug!");
 
+    PluginState pluginState {
+        .friction = friction,
+        .ease = ease,
+        .mousePos = Raylib::GetMousePosition(),
+        .isMousePressed = Raylib::IsMouseButtonPressed(MOUSE_LEFT_BUTTON)
+    };
+
     if (plug) {
-        plug(this, friction, ease, Raylib::GetMousePosition());
+        plug(this, &pluginState);
     }
 
-}
-
-void Particle::warp() {
-
-    auto angle = std::atan2(y,x);
-    vx += std::cos(angle);
-    vx += std::sin(angle);
-
-    //x = GetMousePosition().x + getRand() * 100;
-    //y = GetMousePosition().y + getRand() * 100;
 }

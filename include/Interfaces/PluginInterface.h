@@ -19,6 +19,10 @@ public:
 
     virtual void loadAndAssignPlugin(void* f) = 0;
 
+    virtual void* get_function(const char* funcName) = 0;
+
+    virtual void reload_library() = 0;
+
     virtual ~PluginInterface() = default;
 
 private:

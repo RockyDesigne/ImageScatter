@@ -5,6 +5,10 @@
 #ifndef IMAGEBANANA_PARTICLE_H
 #define IMAGEBANANA_PARTICLE_H
 
+
+#include "Constants.h"
+#include "PluginState.h"
+
 namespace Raylib {
 
 #include <raylib.h>
@@ -12,12 +16,13 @@ namespace Raylib {
 }
 
 using namespace Raylib;
-
-#include "Constants.h"
 #include <cctype>
 
 class Particle {
 public:
+
+    using plugFunc = void (*)(Particle *p, PluginState* pluginState);
+
     float oX = 0.0f;
     float oY = 0.0f;
 
@@ -28,6 +33,7 @@ public:
     float vy = 0.0f;
 
     bool touched = false;
+    static bool isMousePressed;
 
     Raylib::Color color = {};
 
@@ -36,12 +42,10 @@ public:
     static int size;
     static float friction;
 
-    static void (*plug)(Particle* p, float friction, float ease, Raylib::Vector2 mousePos);
+    static plugFunc plug;
 
-    void draw();
-    void update();
-
-    void warp();
+    void draw() ;
+    void update() ;
 };
 
 #endif //IMAGEBANANA_PARTICLE_H

@@ -11,24 +11,28 @@
 #endif
 #include <windows.h>
 
-Plugin::Plugin(const char *dllOgPath, const char *dllToLoad, const char *plugFuncName)
+Plugin::Plugin(const char *dllOgPath, const char *dllToLoad)
         :   m_dllOgPath{dllOgPath},
-            m_dllToLoad{dllToLoad},
-            m_plugFuncName{plugFuncName} {}
+            m_dllToLoad{dllToLoad} {}
 
 void Plugin::load_library() {
+    copy_file();
     m_handle = LoadLibraryA(m_dllToLoad.c_str());
     if (!m_handle) {
         std::cerr << "Could not load library: " << GetLastError() << std::endl;
         return;
     }
+}
 
-    m_op = (plugFunc)GetProcAddress(reinterpret_cast<HMODULE>(m_handle), m_plugFuncName.c_str());
-    if (!m_op) {
+void* Plugin::get_function(const char* funcName) {
+    void* f = nullptr;
+    f = reinterpret_cast<void*>(GetProcAddress(reinterpret_cast<HMODULE>(m_handle), funcName));
+    if (!f) {
         std::cerr << "Could not load function: " << GetLastError() << std::endl;
         FreeLibrary(reinterpret_cast<HMODULE>(m_handle));
         m_handle = nullptr;
     }
+    return f;
 }
 
 void Plugin::copy_file() {
@@ -51,14 +55,22 @@ void Plugin::loadAndAssignPlugin(void* f) {
     copy_file();
 
     m_handle = nullptr;
-    m_op = nullptr;
 
     load_library();
 
-    if (!m_op|| !m_handle) {
+    if (!m_handle) {
         throw std::runtime_error("Failed to load m_plug!");
     }
-    *reinterpret_cast<plugFunc*>(f) = m_op;
+}
+
+void Plugin::reload_library() {
+    unload_library();
+
+    copy_file();
+
+    m_handle = nullptr;
+
+    load_library();
 }
 
 Plugin::~Plugin() {

@@ -20,19 +20,17 @@ int main() {
 
     auto shader = Raylib::LoadShader("../shaders/vs.glsl", "../shaders/fs.glsl");
 
-    auto animEngine = AnimationEngine::getInstance();
-
-    animEngine->loadImage("../images/lena.png");
-
     Raylib::ClearBackground(AnimationEngine::backgroundColor);
 
     Raylib::SetTargetFPS(60);
 
+    auto animEngine = AnimationEngine::getInstance();
+
+    animEngine->loadImage("../images/lena.png");
 
     {
         auto pl = new Plugin {R"(G:\projects\repos\imageBanana\cmake-build-debug\lib\libplugs.dll)",
-                              "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll",
-                              "plug"};
+                              "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll"};
         animEngine->loadPlug(pl);
     }
 
@@ -45,36 +43,49 @@ int main() {
 
     auto osObj = animEngine->getOsObject();
 
-    plug->loadAndAssignPlugin(&Particle::plug);
+    using UPDATE_PTR = void (*)(AnimationEngine* animEngine);
+
+    UPDATE_PTR update = nullptr;
+
+    plug->load_library();
+    Particle::plug = reinterpret_cast<Particle::plugFunc>(plug->get_function("plug"));
+    update = reinterpret_cast<UPDATE_PTR>(plug->get_function("update"));
+
+    update(animEngine);
 
     while (!Raylib::WindowShouldClose()) {
+
+        if (IsKeyPressed(Raylib::KEY_F5)) {
+            animEngine->reset();
+            plug->reload_library();
+            Particle::plug = reinterpret_cast<Particle::plugFunc>(plug->get_function("plug"));
+        }
+
+        if (IsKeyPressed(Raylib::KEY_F4)) {
+            std::string location = osObj->getFileLocation();
+            if (location.empty()) {
+                throw std::runtime_error("File not found!");
+            }
+            animEngine->loadImage(location.c_str());
+            //Raylib::TraceLog(Raylib::LOG_WARNING, location);
+        }
+
+        if (IsKeyPressed(Raylib::KEY_F11)) {
+            Raylib::ToggleFullscreen();
+        }
+
         Raylib::BeginDrawing();
 
-        Raylib::ClearBackground(AnimationEngine::backgroundColor);
-
-            if (IsKeyPressed(Raylib::KEY_F5)) {
-                animEngine->reset();
-                plug->loadAndAssignPlugin(&Particle::plug);
-            }
-
-            if (IsKeyPressed(Raylib::KEY_F4)) {
-                std::string location = osObj->getFileLocation();
-                if (location.empty()) {
-                    throw std::runtime_error("File not found!");
-                }
-                animEngine->loadImage(location.c_str());
-                //Raylib::TraceLog(Raylib::LOG_WARNING, location);
-            }
-
-            if (IsKeyPressed(Raylib::KEY_F11)) {
-                Raylib::ToggleFullscreen();
-            }
+            Raylib::ClearBackground(AnimationEngine::backgroundColor);
 
             animEngine->updateParticles();
 
             animEngine->drawParticles();
 
         Raylib::EndDrawing();
+
+        //update(animEngine);
+
     }
 
     Raylib::UnloadShader(shader);

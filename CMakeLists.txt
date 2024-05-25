@@ -9,7 +9,7 @@ set(SOURCES src/main.cpp
         src/engine/Particle.cpp
         src/OsSpecific/Plugin.cpp
         src/engine/AnimationEngine.cpp
-        src/OsSpecific/WindowsObject.cpp)
+        src/OsSpecific/WindowsObject.cpp include/engine/PluginState.h)
 
 #include_directories(include)
 
