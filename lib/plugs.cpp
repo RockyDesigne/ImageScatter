@@ -2,8 +2,8 @@
 // Created by HORIA on 18.05.2024.
 //
 
-#include "../include/Constants.h"
-#include "../include/Particle.h"
+#include "Constants.h"
+#include "Particle.h"
 
 namespace Raylib {
 
@@ -66,7 +66,7 @@ void testPlug(Particle* p, float friction, float ease, Raylib::Vector2 mousePos)
 extern "C" {
 
 __declspec(dllexport) void plug(Particle* p, float friction, float ease, Raylib::Vector2 mousePos) {
-    testPlug(p,friction,ease,mousePos);
+    chillPlug(p,friction,ease,mousePos);
 }
 
 }

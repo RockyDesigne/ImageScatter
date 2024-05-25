@@ -4,34 +4,44 @@ project(imageBanana)
 set(CMAKE_CXX_STANDARD 20)
 
 add_subdirectory(lib)
+add_subdirectory(src/OsSpecific)
 
 set(SOURCES src/main.cpp
-        src/Particle.cpp
-        src/Plugin.cpp
-        src/AnimationEngine.cpp
-        src/WindowsObject.cpp)
+        src/engine/Particle.cpp
+        src/OsSpecific/Plugin.cpp
+        src/engine/AnimationEngine.cpp
+        src/OsSpecific/WindowsObject.cpp)
 
-include_directories(include)
+#include_directories(include)
 
-set(HEADERS include/Constants.h
-        include/Particle.h
-        include/Plugin.h
-        include/MyRandom.h
-        include/MyVector.h
-        include/ParticleVector.h
-        include/AnimationEngine.h
-        include/WindowsObject.h
-        include/OsObject.h
-        include/PluginInterface.h)
+set(HEADERS include/utils/Constants.h
+        include/engine/Particle.h
+        include/OsSpecific/Plugin.h
+        include/utils/MyRandom.h
+        include/Interfaces/MyVector.h
+        include/utils/ParticleVector.h
+        include/engine/AnimationEngine.h
+        include/OsSpecific/WindowsObject.h
+        include/Interfaces/OsObject.h
+        include/Interfaces/PluginInterface.h)
 
-add_executable(imageBanana ${SOURCES} ${HEADERS})
+add_executable(${PROJECT_NAME} ${SOURCES})
 
 target_compile_options(${PROJECT_NAME} PRIVATE -Wall -Wextra -pedantic -Wshadow)
 
-target_include_directories(${PROJECT_NAME} PRIVATE "G:/projects/repos/libraries/raylib/include" ${CMAKE_SOURCE_DIR}/lib)
+# Add include directories specifically for the target
+target_include_directories(${PROJECT_NAME} PRIVATE
+        ${CMAKE_SOURCE_DIR}/include
+        ${CMAKE_SOURCE_DIR}/include/utils
+        ${CMAKE_SOURCE_DIR}/include/engine
+        ${CMAKE_SOURCE_DIR}/include/OsSpecific
+        ${CMAKE_SOURCE_DIR}/include/Interfaces
+        "G:/projects/repos/libraries/raylib/include"
+        )
 
 link_directories("G:/projects/repos/libraries/raylib/lib")
 
 target_link_libraries(${PROJECT_NAME} PRIVATE
         "G:/projects/repos/libraries/raylib/lib/libraylib.a"
-        winmm.dll gdi32.dll user32.dll shell32.dll kernel32.dll advapi32 comdlg32 plugs)
+        winmm.dll gdi32.dll plugs
+        )
