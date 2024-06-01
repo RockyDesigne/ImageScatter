@@ -36,7 +36,7 @@ public:
     void loadParticles(Raylib::Color* pixels, int imgWidth, int imgHeight) override;
     void loadImage(const char* filePath) override;
     void release() override;
-    void reassignPlug(void*) override;
+    void run() override;
 
     AnimationEngine(const AnimationEngine&) = delete;
     AnimationEngine& operator=(const AnimationEngine&) = delete;
@@ -45,7 +45,7 @@ public:
 
     AnimationEngine() = default;
 private:
-    static ParticleVector<maxParticles> particles;
+    ParticleVector<maxParticles> particles;
 };
 
 #endif //IMAGEBANANA_ANIMATIONENGINE_H

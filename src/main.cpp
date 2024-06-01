@@ -36,10 +36,7 @@ int main() {
     auto f = reinterpret_cast<ANIM_ENG_PTR>(pl.get_function("getAnimPtr"));
 
     AnimationEngineInterface* animEngine = f();
-    animEngine->reassignPlug(pl.get_function("plug"));
     animEngine->loadImage("../images/lena.png");
-
-    //update(animEngine);
 
     while (!Raylib::WindowShouldClose()) {
 
@@ -49,7 +46,6 @@ int main() {
             auto tmp = reinterpret_cast<ANIM_ENG_PTR>(pl.get_function("getAnimPtr"));
             animEngine = tmp();
             animEngine->reset();
-            animEngine->reassignPlug(pl.get_function("plug"));
             animEngine->loadImage("../images/lena.png");
         }
 
@@ -67,17 +63,7 @@ int main() {
         }
 
 
-        Raylib::BeginDrawing();
-
-            Raylib::ClearBackground(bkgColor);
-
-            animEngine->updateParticles();
-
-            animEngine->drawParticles();
-
-        Raylib::EndDrawing();
-
-        //update(animEngine);
+        animEngine->run();
 
     }
 

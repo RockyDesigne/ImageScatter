@@ -4,8 +4,6 @@
 #include "AnimationEngine.h"
 #include "MyRandom.h"
 
-ParticleVector<AnimationEngine::maxParticles> AnimationEngine::particles;
-
 void AnimationEngine::reset() {
     for (std::size_t i = 0; i < particles.m_size; ++i) {
         particles.elems[i].x = std::clamp<float>(getRand() * winWidth, 0, static_cast<float>(winWidth) - static_cast<float>(Particle::size));
@@ -78,12 +76,20 @@ void AnimationEngine::loadImage(const char* filePath) {
     Raylib::UnloadImage(currImg);
 }
 
-void AnimationEngine::release() {
-    delete this;
+void AnimationEngine::run() {
+    Raylib::BeginDrawing();
+
+        Raylib::ClearBackground(AnimationEngine::backgroundColor);
+
+        updateParticles();
+
+        drawParticles();
+
+    Raylib::EndDrawing();
 }
 
-void AnimationEngine::reassignPlug(void* f) {
-    Particle::plug = reinterpret_cast<Particle::plugFunc>(f);
+void AnimationEngine::release() {
+    delete this;
 }
 
 AnimationEngineInterface* getAnimPtr(void) {

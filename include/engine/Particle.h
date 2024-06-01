@@ -21,8 +21,6 @@ using namespace Raylib;
 class Particle {
 public:
 
-    using plugFunc = void (*)(Particle *p, PluginState* pluginState);
-
     float oX = 0.0f;
     float oY = 0.0f;
 
@@ -42,10 +40,18 @@ public:
     static int size;
     static float friction;
 
-    static plugFunc plug;
-
     void draw() ;
     void update() ;
+
+    //plugs
+    void chillPlug();
+
+    void whooshyPlug();
+
+    void testPlug();
+
+    void boomPlug();
+
 };
 
 #endif //IMAGEBANANA_PARTICLE_H

@@ -25,7 +25,7 @@ public:
     virtual void loadParticles(Raylib::Color* pixels, int imgWidth, int imgHeight) = 0;
     virtual void loadImage(const char* filePath) = 0;
     virtual void release() = 0;
-    virtual void reassignPlug(void*) = 0;
+    virtual void run() = 0;
 };
 
 extern "C" LIBAPI AnimationEngineInterface* getAnimPtr(void);
