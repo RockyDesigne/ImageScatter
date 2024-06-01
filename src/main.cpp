@@ -4,13 +4,14 @@ namespace Raylib {
 
 }
 
-using namespace Raylib;
+using namespace Raylib; // this is done to avoid naming conflicts with windows.h (yes, it's a hack)
 
-#include "Particle.h"
+#include <stdexcept>
+
 #include "Constants.h"
-#include "AnimationEngine.h"
 #include "Plugin.h"
 #include "WindowsObject.h"
+#include "AnimationEngineInterface.h"
 
 int main() {
 
@@ -20,49 +21,40 @@ int main() {
 
     auto shader = Raylib::LoadShader("../shaders/vs.glsl", "../shaders/fs.glsl");
 
-    Raylib::ClearBackground(AnimationEngine::backgroundColor);
+    Color bkgColor {255,255,255,0};
+
+    Raylib::ClearBackground(bkgColor);
 
     Raylib::SetTargetFPS(60);
 
-    auto animEngine = AnimationEngine::getInstance();
+    Plugin pl {R"(G:\projects\repos\imageBanana\cmake-build-debug\lib\libplugs.dll)",
+                          "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll"};
+    pl.load_library();
 
+    WindowsObject osObj {};
+
+    auto f = reinterpret_cast<ANIM_ENG_PTR>(pl.get_function("getAnimPtr"));
+
+    AnimationEngineInterface* animEngine = f();
+    animEngine->reassignPlug(pl.get_function("plug"));
     animEngine->loadImage("../images/lena.png");
 
-    {
-        auto pl = new Plugin {R"(G:\projects\repos\imageBanana\cmake-build-debug\lib\libplugs.dll)",
-                              "G:/projects/repos/imageBanana/plugs/libplugs_v1.dll"};
-        animEngine->loadPlug(pl);
-    }
-
-    auto plug = animEngine->getPlug();
-
-    {
-        auto osObj = new WindowsObject {};
-        animEngine->loadOsObject(osObj);
-    }
-
-    auto osObj = animEngine->getOsObject();
-
-    using UPDATE_PTR = void (*)(AnimationEngine* animEngine);
-
-    UPDATE_PTR update = nullptr;
-
-    plug->load_library();
-    Particle::plug = reinterpret_cast<Particle::plugFunc>(plug->get_function("plug"));
-    update = reinterpret_cast<UPDATE_PTR>(plug->get_function("update"));
-
-    update(animEngine);
+    //update(animEngine);
 
     while (!Raylib::WindowShouldClose()) {
 
         if (IsKeyPressed(Raylib::KEY_F5)) {
+            animEngine->release();
+            pl.reload_library();
+            auto tmp = reinterpret_cast<ANIM_ENG_PTR>(pl.get_function("getAnimPtr"));
+            animEngine = tmp();
             animEngine->reset();
-            plug->reload_library();
-            Particle::plug = reinterpret_cast<Particle::plugFunc>(plug->get_function("plug"));
+            animEngine->reassignPlug(pl.get_function("plug"));
+            animEngine->loadImage("../images/lena.png");
         }
 
         if (IsKeyPressed(Raylib::KEY_F4)) {
-            std::string location = osObj->getFileLocation();
+            std::string location = osObj.getFileLocation();
             if (location.empty()) {
                 throw std::runtime_error("File not found!");
             }
@@ -74,9 +66,10 @@ int main() {
             Raylib::ToggleFullscreen();
         }
 
+
         Raylib::BeginDrawing();
 
-            Raylib::ClearBackground(AnimationEngine::backgroundColor);
+            Raylib::ClearBackground(bkgColor);
 
             animEngine->updateParticles();
 
@@ -91,6 +84,8 @@ int main() {
     Raylib::UnloadShader(shader);
 
     Raylib::CloseWindow();
+
+    animEngine->release();
 
     return 0;
 }

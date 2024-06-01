@@ -5,18 +5,9 @@
 #ifndef IMAGEBANANA_PLUGIN_H
 #define IMAGEBANANA_PLUGIN_H
 
-#include "Particle.h"
 #include "PluginInterface.h"
 
 #include <string>
-
-namespace Raylib {
-
-#include <raylib.h>
-
-}
-
-using namespace Raylib;
 
 class Plugin : public PluginInterface {
 public:

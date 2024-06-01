@@ -3,10 +3,9 @@
 //
 
 #include "Particle.h"
-#include <cmath>
 #include <cassert>
 
-int Particle::size = 10;
+int Particle::size = 20;
 float Particle::ease = 0.1f;
 float Particle::friction = 0.95f;
 bool Particle::isMousePressed = false;

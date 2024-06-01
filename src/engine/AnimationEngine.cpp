@@ -4,28 +4,7 @@
 #include "AnimationEngine.h"
 #include "MyRandom.h"
 
-AnimationEngine* AnimationEngine::m_instance = nullptr;
-
-OsObject* AnimationEngine::getOsObject() {
-    if (!m_osObject) {
-        throw std::runtime_error ("No os object instantiated!");
-    }
-    return m_osObject;
-}
-
-PluginInterface* AnimationEngine::getPlug() {
-    if (!m_plug) {
-        throw std::runtime_error ("No plugin object instantiated!");
-    }
-    return m_plug;
-}
-
-AnimationEngine* AnimationEngine::getInstance() {
-    if (!m_instance) {
-        m_instance = new AnimationEngine;
-    }
-    return m_instance;
-}
+ParticleVector<AnimationEngine::maxParticles> AnimationEngine::particles;
 
 void AnimationEngine::reset() {
     for (std::size_t i = 0; i < particles.m_size; ++i) {
@@ -71,11 +50,6 @@ void AnimationEngine::loadParticles(Raylib::Color* pixels, int imgWidth, int img
     }
 }
 
-AnimationEngine::~AnimationEngine() {
-    delete m_plug;
-    delete m_instance;
-}
-
 void AnimationEngine::loadImage(const char* filePath) {
     particles.reset();
 
@@ -104,12 +78,14 @@ void AnimationEngine::loadImage(const char* filePath) {
     Raylib::UnloadImage(currImg);
 }
 
-void AnimationEngine::loadPlug(PluginInterface* plug) {
-    delete m_plug;
-    m_plug = plug;
+void AnimationEngine::release() {
+    delete this;
 }
 
-void AnimationEngine::loadOsObject(OsObject *osObj) {
-    delete m_osObject;
-    m_osObject = osObj;
+void AnimationEngine::reassignPlug(void* f) {
+    Particle::plug = reinterpret_cast<Particle::plugFunc>(f);
+}
+
+AnimationEngineInterface* getAnimPtr(void) {
+    return new AnimationEngine;
 }

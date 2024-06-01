@@ -4,7 +4,6 @@
 
 #include "Constants.h"
 #include "Particle.h"
-#include "AnimationEngine.h"
 #include "PluginState.h"
 
 namespace Raylib {
@@ -14,6 +13,8 @@ namespace Raylib {
 }
 
 #include <cmath>
+
+#define EXPORT __declspec(dllexport)
 
 void chillPlug(Particle* p, PluginState* pluginState) {
     auto mousePos = pluginState->mousePos;
@@ -98,12 +99,8 @@ void boomPlug(Particle* p, PluginState* pluginState) {
 
 extern "C" {
 
-__declspec(dllexport) void update(AnimationEngine* animEngine) {
-
-}
-
-__declspec(dllexport) void plug(Particle* p, PluginState* pluginState) {
-    boomPlug(p,pluginState);
+EXPORT void plug(Particle* p, PluginState* pluginState) {
+    chillPlug(p,pluginState);
 }
 
 }
